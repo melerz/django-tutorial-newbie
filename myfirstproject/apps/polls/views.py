@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.template import RequestContext, loader
 from django.http import HttpResponse, HttpResponseRedirect
 from polls.models import Question, Choice
+from django.views import generic
 def index(request):
 	latest_question_list = Question.objects.order_by('-pub_date')[:5]
 	#template = loader.get_template('polls/index.html')
@@ -48,3 +49,27 @@ def vote(request, question_id):
 		selected_choice.save()
 		#best practice is to redirect after POST
 		return HttpResponseRedirect(reverse('polls:results', args=(p.id,)))
+
+
+class IndexView(generic.ListView):
+	template_name = 'polls/index.html'
+	context_object_name = 'latest_question_list'
+
+	def get_queryset(self):
+		"""Return the last five published questions."""
+		return Question.objects.order_by('pub_date')[:5]
+
+
+class DetailView(generic.DetailView):
+   # model = Question #instead of get_queryset. automatically filter by 'pk'. I think.
+	template_name = 'polls/details.html'
+
+	def get_queryset(self):
+		obj = get_object_or_404(Question,pk=self.kwargs['pk']) # the 'pk' here comes from url regex
+		return Question.objects.filter(pk=obj.id)
+
+
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
+
